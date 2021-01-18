@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define BUFFER_SIZE 100
+
 int	get_next_line(char **line);
 void	ft_bzero(void *s, size_t n);
 char *ft_strjoin(char *dst, char *src);
