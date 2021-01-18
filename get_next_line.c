@@ -113,8 +113,8 @@ void	ft_bzero(void *s, size_t n)
 
 int	get_next_line(char **line)
 {
-	char 		buf[11];
-	static char	bufover[11];
+	char 		buf[BUFFER_SIZE +1];
+	static char	bufover[BUFFER_SIZE +1];
 	int			eol;
 
 	if ((!line) || (read(0, buf, 0) < 0))
@@ -123,15 +123,15 @@ int	get_next_line(char **line)
 	if ((*line = (char *)malloc(sizeof(char) * 2)) == 0)
 		return(-1);
 	line[0] = 0;
-	while(!eol)
+	while (!eol)
 	{
-		ft_bzero(buf, 11);
+		ft_bzero(buf, BUFFER_SIZE +1);
 		ft_strcpy(buf, bufover);
-		ft_bzero(bufover, 11);
+		ft_bzero(bufover, BUFFER_SIZE +1);
 		if (buf[0] == '\0')
 		{
-			if (read(0, buf, 10) < 1)
-				return (read(0, buf, 10));
+			if (read(0, buf, BUFFER_SIZE) < 1)
+				return (read(0, buf, BUFFER_SIZE));
 		}
 		eol = ft_eol(buf, bufover);
 		*line = ft_strjoin(*line, buf);
