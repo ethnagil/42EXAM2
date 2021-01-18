@@ -8,77 +8,145 @@ Votre fonction devra être prototypée de la façon suivante :
 int ft_printf(const char *, ... );
 */
 
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   ft_printf.c                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: egillesp <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2021/01/14 13:21:51 by egillesp          #+#    #+#             */
+/*   Updated: 2021/01/14 15:23:19 by egillesp         ###   ########lyon.fr   */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include <stdlib.h>
 #include <stdarg.h>
 #include <unistd.h>
 
+int ft_write(char *str, int len)
+{
+	write(1, str, len);
+	return (len);
+}
+
+int	ft_strlen(char *str)
+{
+	int i;
+
+	i = 0;
+	while (str[i])
+		i++;
+	return(i);
+}
 
 char *ft_strdup(char *str)
 {
 	int i;
-	char *dstr;
+	char *new;
 
 	if (!str)
-		return (str);
+		return(str);
 	i = 0;
-	while (str[i++]) ;
-	dstr = (char*)malloc(sizeof(char) * (i+1));
-	i = 0;
+	new = (char *)malloc(sizeof(char) * (ft_strlen(str) + 1));
+	if (!new)
+		return (0);
 	while (str[i])
 	{
-		dstr[i] = str[i];
+		new[i] = str[i];
 		i++;
 	}
-	dstr[i] = 0;
-	return (dstr);
+	new[i] = '\0';
+	return (new);
 }
 
-char *ft_atoi_base(long int n, char *basenum)
+char *ft_itoa_base(unsigned long n, char *base)
 {
-	int base;
-	int	len;
-	char *str;
-	long int n2;
+	unsigned long n2;
+	int		len;
+	char	*new;
+	int		b;
+	int neg = 0;
 
-	if (n < 0)
-		n = n * -1;
+	b = ft_strlen(base);
 	n2 = n;
-	base = -1;
-	while (basenum[++base]) ;
 	len = 0;
-	if (n == 0)
+	if (n == 0)    
 	{
-		str = ft_strdup("0");
-		return (str);
-	}
+		new = ft_strdup("0");
+		return(new);
+	} 
 	while (n > 0)
 	{
-			n = n / base;
-			len++;
+		n = n / b;
+		len++;
 	}
-	str = (char*)malloc(sizeof(char) * (len + 1));
-	str[len] = 0;
-	while (len > 0)
+	new = (char *)malloc(sizeof(char) * (len + 1));
+	if (!new)
+		return (0);
+	new[len] = '\0';
+	while (n2 > 0)
 	{
-		str[--len] = basenum[(n2 % base)];
-		n2 = n2/base;
+		new[--len] = base[n2 % b];
+		n2 = n2 / b;
 	}
-	return(str);
+	return(new);
 }
 
-
-
-void		ft_read_flag(char *f, int *i, int *prec1, int *prec2)
+int		ft_apply_flag(char *prstr, int p1, int p2, char spec, int neg)
 {
-	*prec1 = -1;
-	*prec2 = -1;
+	int len;
+	int zero;
+	int space;
+	int count;
+
+	zero = 0;
+	space = 0;
+	count = 0;
+	if (prstr[0] == '\0')     /** ! **/
+		return (0);
+	len = ft_strlen(prstr);
+	if (p2 >= 0)
+	{
+		if (((spec == 's') && (len > p2)) || ((spec != 's') &&   /** ! **/
+				(len == 1) && (prstr[0] == '0')))
+			prstr[p2] = '\0';
+		if (((spec == 'd') || (spec == 'x')) && (p2 > len))
+			zero = p2 - len;
+	}
+	len = ft_strlen(prstr);  /***  if s, len can be truncated **/
+	if (p1 >= 0)
+	{
+		if ((len + zero) < p1)
+			space = p1 - len - zero;
+	}
+	if (neg)
+		space--;
+	while (space > 0)
+	{
+		count += ft_write(" ", 1);
+		space--;
+	}
+	if (neg)
+		count += ft_write("-", 1);
+	while (zero-- > 0)
+		count += ft_write("0", 1);
+	return (count);
+}
+
+void	ft_read_flag(char *f, int *i, int *p1, int *p2)
+{
+	int		p2neg = 0;
+
+	*p1 = -1;
+	*p2 = -1;
 	if (f[*i] == '-')
 		*i = *i + 1;
-	while (((f[*i] >= '0') && (f[*i] <= '9')) && (f[*i] != '.'))
+	while((f[*i]) && (f[*i] >= '0') && (f[*i] <= '9'))
 	{
-		if (*prec1 < 0)
-			*prec1 = 0;
-		*prec1 =  (*prec1 * 10) + (f[*i] - 48);
+		if (*p1 < 0)
+			*p1 = 0;
+		*p1 = (*p1 * 10) + (f[*i] - 48);
 		*i = *i + 1;
 	}
 	if (f[*i] == '.')
@@ -86,116 +154,64 @@ void		ft_read_flag(char *f, int *i, int *prec1, int *prec2)
 		*i = *i + 1;
 		if (f[*i] == '-')
 			*i = *i + 1;
-		while ((f[*i] >= '0') && (f[*i] <= '9'))
+		while((f[*i]) && (f[*i] >= '0') && (f[*i] <= '9'))
 		{
-			if (*prec2 < 0)
-				*prec2 = 0;
-			*prec2 = (*prec2 * 10) + (f[*i] - 48);
+			if (*p2 < 0)
+				*p2 = 0;
+			*p2 = (*p2 * 10) + (f[*i] - 48);
 			*i = *i + 1;
 		}
- 	}
-}
-
-char	*ft_apply_flag(char *prstr, int prec1, int prec2, char spec)
-{
-	int i;
-	int j;
-	int k;
-	char *str;
-
-
-	if (prec2 >= 0)
-	{
-		if (spec == 's')
-			prstr[prec2] = 0;
-		if ((spec == 'd') || (spec == 'x'))
-		{
-			i = 0;
-			while (prstr[i++]);
-			i--;
-			if (i < prec2)
-			{
-				str = (char *)malloc(sizeof(char) * (prec2 + 1));
-				j = 0;
-				while(j < (prec2 - i))
-					str[j++] = '0';
-				k = 0;
-				while ((j + k) < prec2)
-				{
-					str[j+k] = prstr[k];
-					k++;
-				}
-				str[j + k] = 0;
-				free(prstr);
-				prstr = str;
-			}
-
-		}
+		if (*p2 == -1)    /** ! **/
+			*p2 = 0;
 	}
-	if (prec1 > 0)
-	{
-		i  = 0;
-		while (prstr[i++]) ;
-		if (i < prec1)
-		{
-			str = (char *)malloc(sizeof(char) * (prec1 + 1));
-			j = 0;
-			while (j <= (prec1 - i))
-			{
-				str[j++] = ' ';
-			}
-			k = 0;
-			while ((j + k) < prec1)
-			{
-				str[j+k] = prstr[k];
-				k++;
-			}
-			str[j + k] = 0;
-			free(prstr);
-			prstr = str;
-		}			
-	}
-	return(prstr);
 }
 
 int		ft_print_var(char *f, va_list args, int *i)
 {
-	int	prec1;
-	int	prec2;
-	int	len;
-	char	spec;
-	char	*prstr;
+	int	p1;
+	int p2;
+	long n;
+	char *prstr;
+	char spec;
+	int	j;
+	int neg;
 
 	prstr = NULL;
-	ft_read_flag(f, i, &prec1, &prec2);
+	neg = 0;
+	ft_read_flag(f, i, &p1, &p2);
 	spec = f[*i];
 	if (spec == 's')
-		prstr = ft_strdup(va_arg(args, char *));
+		prstr = ft_strdup(va_arg(args, char*));
 	if (spec == 'd')
-		prstr = ft_atoi_base((va_arg(args, int)), "0123456789");
+	{
+		n = va_arg(args, int);
+		if (n < 0)
+		{
+			neg = 1;
+			n = n * -1;
+		}
+		prstr = ft_itoa_base((unsigned long)n, "0123456789");
+	}
 	if (spec == 'x')
-		prstr = ft_atoi_base((va_arg(args, unsigned int)), "0123456789abcdef");	
-	if (!prstr)
-		prstr = ft_strdup("(null)");	
-	if ((prec1 >= 0) || (prec2 >= 0))
-		prstr = ft_apply_flag(prstr, prec1, prec2, spec);
-	len = 0;
-	while(prstr[len])
-		write(1, &prstr[len++], 1);
-	free(prstr);
-	return (len);
+		prstr = ft_itoa_base((unsigned long)(va_arg(args, unsigned int)), "0123456789abcdef");
+	if (!prstr)							 /** ! **/
+		prstr = ft_strdup("(null)");
+	j = ft_apply_flag(prstr, p1, p2, spec, neg);
+	j += ft_write(prstr, ft_strlen(prstr));	
+	free(prstr); 						 /** ! **/
+	return (j);
 }
 
-int ft_printf(const char *f, ... )
+int		ft_printf(const char *f, ...)
 {
-	va_list	args;
+	va_list args;
 	int		i;
 	int		len;
 
 	va_start(args, f);
-	len = 0;
 	i = 0;
-	while(f[i])
+	len = 0;
+	while (f[i])
 	{
 		if (f[i] == '%')
 		{
@@ -207,9 +223,9 @@ int ft_printf(const char *f, ... )
 			write(1, &f[i], 1);
 			len++;
 		}
-		if (f[i])
+		if (f[i])      /** ! **/
 			i++;
 	}
-	va_end(args);
-	return (len);
+	va_end(args);       /** ! **/
+	return(len);
 }
