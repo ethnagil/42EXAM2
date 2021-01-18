@@ -109,7 +109,7 @@ int		ft_apply_flag(char *prstr, int p1, int p2, char spec, int neg)
 	if (p2 >= 0)
 	{
 		if (((spec == 's') && (len > p2)) || ((spec != 's') &&   /** ! **/
-				(len == 1) && (prstr[0] == '0')))
+				(len == 1) && (prstr[0] == '0') && (p2 == 0)))
 			prstr[p2] = '\0';
 		if (((spec == 'd') || (spec == 'x')) && (p2 > len))
 			zero = p2 - len;
